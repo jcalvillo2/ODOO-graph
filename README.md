@@ -1,213 +1,266 @@
-# Odoo Dependency Tracker
+# Odoo Tracker
 
-Una herramienta para analizar y visualizar dependencias de módulos en Odoo usando grafos con Neo4j.
+A powerful ETL (Extract, Transform, Load) tool for analyzing, tracking, and visualizing Odoo module dependencies, models, and views using Neo4j graph database.
 
-## Descripción
+## 🎯 Purpose
 
-Odoo Dependency Tracker te ayuda a navegar y entender las dependencias entre módulos de Odoo. Cuando desarrollas un módulo nuevo y necesitas saber:
-- En qué módulo está definido un modelo
-- Qué campos tiene disponibles un modelo
-- Qué dependencias necesita tu módulo
-- Cómo están relacionados los módulos entre sí
+This tool helps Odoo developers understand complex codebases by:
 
-Esta herramienta te proporciona respuestas rápidas mediante un grafo almacenado en Neo4j.
+- **Finding model definitions** across hundreds of modules
+- **Analyzing module dependencies** and detecting circular references
+- **Tracing inheritance chains** for models and views
+- **Searching fields** across the entire codebase
+- **Visualizing relationships** using graph queries
 
-## Características
+## 🚀 Features
 
-- Indexa módulos de Odoo desde directorios de addons
-- Parsea archivos `__manifest__.py` para extraer dependencias
-- Parsea modelos usando AST (Abstract Syntax Tree) sin ejecutar código
-- Almacena relaciones en Neo4j para consultas rápidas
-- CLI intuitivo con formato bonito usando Rich
-- Búsqueda de modelos, campos y dependencias
+- **Scalable**: Handles 500+ modules, 10,000+ models/views, 2GB+ codebases
+- **Efficient**: Batch processing, streaming parsers, memory monitoring
+- **Incremental**: Only re-index changed files
+- **Fast**: Optional parallel processing, intelligent caching
+- **User-friendly**: Rich CLI with progress bars and formatted output
 
-## Requisitos
+## 🏗️ Architecture
 
-- Python 3.11+
-- Docker (para Neo4j)
-- Docker Compose
-
-## Instalación
-
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/yourusername/odoo-dependency-tracker.git
-cd odoo-dependency-tracker
+```
+Odoo Source Code
+    ↓
+AST/XML Parsers (streaming, cached)
+    ↓
+Batch Processing (memory-efficient)
+    ↓
+Neo4j Graph Database (indexed)
+    ↓
+CLI Queries (Cypher-powered)
 ```
 
-### 2. Crear entorno virtual
+## 📋 Prerequisites
+
+- **Python 3.11+**
+- **Docker & Docker Compose** (for Neo4j)
+- **Git**
+
+## 🔧 Installation
+
+### 1. Clone the repository
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
+git clone <repository-url>
+cd ODOO-graph
 ```
 
-### 3. Instalar dependencias
+### 2. Create virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configurar variables de entorno
+### 4. Configure environment
 
 ```bash
 cp .env.example .env
-# Editar .env con tus configuraciones
+# Edit .env with your settings
 ```
 
-### 5. Levantar Neo4j con Docker
+**Important settings in `.env`:**
+
+- `NEO4J_PASSWORD`: Set a secure password
+- `ADDONS_PATHS`: Comma-separated paths to your Odoo addons directories
+- `BATCH_SIZE`: Adjust based on your system (default: 50)
+- `MAX_MEMORY_PERCENT`: Memory usage limit (default: 70%)
+
+### 5. Start Neo4j
 
 ```bash
 docker-compose up -d
 ```
 
-Verifica que Neo4j esté corriendo:
+Verify Neo4j is running:
+- Browser UI: http://localhost:7474
+- Bolt connection: bolt://localhost:7687
+
+## 📖 Usage
+
+### View Configuration
+
 ```bash
-curl http://localhost:7474
+python main.py config
 ```
 
-Accede a la interfaz web de Neo4j en: http://localhost:7474
-
-## Uso
-
-### Indexar módulos de Odoo
+### Index Odoo Modules
 
 ```bash
+# Index all modules in a directory
 python main.py index /path/to/odoo/addons
+
+# Use custom batch size
+python main.py index /path/to/odoo/addons --batch-size 100
+
+# Incremental indexing (only changed files)
+python main.py index /path/to/odoo/addons --incremental
 ```
 
-Para limpiar la base de datos antes de indexar:
-```bash
-python main.py index /path/to/odoo/addons --clear
-```
-
-### Ver dependencias de un módulo
+### Query Dependencies
 
 ```bash
+# Show module dependencies
 python main.py dependencies sale
-```
 
-Con dependencias recursivas:
-```bash
-python main.py dependencies sale --recursive
-```
+# Find where a model is defined
+python main.py find-model res.partner
 
-### Encontrar en qué módulo está definido un modelo
-
-```bash
-python main.py find-model sale.order
-```
-
-Salida:
-```
-Modelo: sale.order
-Definido en: módulo 'sale'
-Archivo: /opt/odoo/addons/sale/models/sale_order.py
-Hereda de: mail.thread, mail.activity.mixin
-```
-
-### Ver campos de un modelo
-
-```bash
-python main.py show-fields sale.order
-```
-
-### Buscar un campo en todos los modelos
-
-```bash
-python main.py find-field partner_id
-```
-
-### Listar modelos de un módulo
-
-```bash
+# List all models in a module
 python main.py list-models sale
 ```
 
-## Estructura del Proyecto
+## 🗂️ Project Structure
 
 ```
-odoo-dependency-tracker/
-├── src/
-│   ├── parser/
-│   │   ├── manifest_parser.py    # Parser de __manifest__.py
-│   │   └── model_parser.py       # Parser AST de modelos
-│   ├── graph/
-│   │   └── neo4j_client.py       # Cliente Neo4j
-│   ├── cli/
-│   │   └── commands.py           # Comandos Click
-│   └── utils/
-│       └── logger.py
-├── tests/
-│   ├── test_manifest_parser.py
-│   └── test_model_parser.py
-├── docker-compose.yml
-├── requirements.txt
-├── setup.py
-├── main.py
-├── CLAUDE.md
-└── README.md
+/ODOO-graph/
+├── cli/              # CLI commands (Click)
+├── parsers/          # AST & XML parsers
+├── graph/            # Neo4j integration
+├── utils/            # Helpers (monitoring, hashing, logging)
+├── config/           # Configuration management
+├── tests/            # Test suite (Pytest)
+├── main.py           # CLI entry point
+├── requirements.txt  # Python dependencies
+├── .env.example      # Environment variables template
+├── docker-compose.yml # Neo4j setup
+└── README.md         # This file
 ```
 
-## Ejecutar Tests
+## 🧪 Development
+
+### Run Tests
 
 ```bash
 pytest
 ```
 
-Con cobertura:
+### Run Tests with Coverage
+
 ```bash
-pytest --cov=src --cov-report=html
+pytest --cov=. --cov-report=html
 ```
 
-## Modelo de Datos
+### Code Formatting
 
-### Nodos
+```bash
+black .
+```
 
-**Module**: Representa un módulo de Odoo
-- name: Nombre del módulo
-- version: Versión
-- category: Categoría
-- installable: Si es instalable
+### Linting
 
-**Model**: Representa un modelo/clase de Odoo
-- name: Nombre del modelo (ej: `sale.order`)
-- module: Módulo donde está definido
-- file_path: Ruta al archivo .py
-- fields: Diccionario de campos
+```bash
+flake8
+```
 
-### Relaciones
+### Type Checking
 
-- `(Module)-[:DEPENDS_ON]->(Module)`: Dependencia entre módulos
-- `(Model)-[:INHERITS_FROM]->(Model)`: Herencia entre modelos
-- `(Model)-[:DELEGATES_TO]->(Model)`: Delegación (_inherits)
-- `(Model)-[:DEFINED_IN]->(Module)`: Modelo definido en módulo
+```bash
+mypy .
+```
 
-## Roadmap
+## 📊 Performance Targets
 
-- [ ] Parser de vistas XML
-- [ ] Detección de dependencias circulares
-- [ ] Exportar grafo a GraphML
-- [ ] Visualización web del grafo
-- [ ] Búsqueda de rutas entre módulos
-- [ ] Análisis de impacto de cambios
+- Index **500 modules** in under 5 minutes
+- Memory usage stays below **70%** of system RAM
+- Incremental re-indexing in under 30 seconds
+- Query response time under 1 second
 
-## Contribuir
+## 🔍 How It Works
 
-Las contribuciones son bienvenidas. Por favor:
+### 1. Extract
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+- Scans Odoo directories for modules
+- Reads `__manifest__.py` files
+- Parses Python files using AST
+- Parses XML view files
 
-## Licencia
+### 2. Transform
 
-MIT License - ver archivo LICENSE para detalles
+- Extracts module metadata (name, version, dependencies)
+- Identifies models (`_name`, `_inherit`, `_inherits`)
+- Captures field definitions
+- Processes view inheritance
 
-## Soporte
+### 3. Load
 
-Para preguntas o issues, por favor abre un issue en GitHub.
+- Batch inserts into Neo4j
+- Creates nodes: Module, Model, View
+- Creates relationships: DEPENDS_ON, INHERITS_FROM, etc.
+- Builds indexes for fast queries
+
+## 🎓 Odoo Concepts
+
+### Modules vs Models
+
+- **Modules**: Odoo packages/addons (e.g., `sale`, `stock`)
+- **Models**: Python classes representing database tables (e.g., `sale.order`, `res.partner`)
+
+### Inheritance Types
+
+- **`_inherit`**: Extends existing model
+- **`_inherits`**: Delegates to another model
+
+## 🛠️ Troubleshooting
+
+### Neo4j won't start
+
+```bash
+# Check if port is already in use
+docker ps
+
+# Stop and remove containers
+docker-compose down
+
+# Start fresh
+docker-compose up -d
+```
+
+### Out of memory errors
+
+Reduce `BATCH_SIZE` in `.env`:
+
+```
+BATCH_SIZE=25
+```
+
+### Permission errors
+
+Ensure the user has read access to Odoo source directories.
+
+## 📚 Resources
+
+- [Odoo Developer Documentation](https://www.odoo.com/documentation/)
+- [Neo4j Cypher Manual](https://neo4j.com/docs/cypher-manual/current/)
+- [Python AST Documentation](https://docs.python.org/3/library/ast.html)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Follow the THINK → PLAN → IMPLEMENT → VALIDATE methodology
+2. Write all code in English
+3. Add tests for new features
+4. Update documentation
+
+## 📝 License
+
+[Add license information]
+
+## 👥 Authors
+
+[Add author information]
+
+---
+
+**Built with ❤️ for the Odoo community**

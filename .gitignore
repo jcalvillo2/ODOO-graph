@@ -210,6 +210,11 @@ __marimo__/
 neo4j_data/
 neo4j_logs/
 
+# Project-specific cache
+.cache/
+*.log
+odoo_tracker.log
+
 # IDEs
 .vscode/
 .idea/
