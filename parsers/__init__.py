@@ -5,6 +5,7 @@ This module contains parsers for Odoo source files:
 - Manifest parser: Parse __manifest__.py files
 - Model parser: Parse Python model files using AST
 - XML parser: Parse Odoo view XML files
+- Module discovery: High-level module discovery service
 """
 
 from .manifest_parser import (
@@ -20,6 +21,12 @@ from .model_parser import (
     is_odoo_model,
 )
 
+from .module_discovery import (
+    ModuleDiscovery,
+    discover_modules,
+    build_dependency_graph,
+)
+
 __all__ = [
     # Manifest parser
     "find_modules",
@@ -30,4 +37,8 @@ __all__ = [
     "find_model_files",
     "parse_model_file",
     "is_odoo_model",
+    # Module discovery
+    "ModuleDiscovery",
+    "discover_modules",
+    "build_dependency_graph",
 ]
